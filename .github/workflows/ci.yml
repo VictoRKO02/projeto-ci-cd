@@ -1,4 +1,4 @@
-name: CI com Jest e Deploy na Vercel
+name: CI com Jest, Semgrep SAST e Deploy na Vercel
 
 on:
   push:
@@ -8,6 +8,11 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    
+    # Adicionado permissões de segurança para que o Semgrep possa escrever eventos de segurança no GitHub
+    permissions:
+      contents: read # Necessário para fazer checkout do código
+      security-events: write # Necessário para reportar resultados do Semgrep na aba Security do GitHub
 
     steps:
       - name: Checkout do código
@@ -23,3 +28,21 @@ jobs:
 
       - name: Executar testes com Jest
         run: npm test
+        
+      # --- Passo de DevSecOps: Análise SAST com Semgrep ---
+      - name: Rodar Semgrep SAST
+        # Usa a Ação oficial do Semgrep para escanear o código
+        uses: returntocorp/semgrep-action@v1 
+        with:
+          # A configuração 'r/javascript' é ideal para projetos Node.js/JavaScript.
+          # A configuração 'r/all' pode ser usada para cobrir mais linguagens/regras se necessário.
+          # A opção 'auto' também pode ser usada para detecção automática de linguagens.
+          config: 'r/javascript, r/secrets'
+          # As regras de segurança encontradas são exibidas na aba "Security" do seu repositório GitHub
+          # no formato SARIF.
+          
+      # --- A etapa de Deploy na Vercel viria aqui, se a tivesse no workflow original ---
+      # Exemplo de Deploy (dependendo da sua implementação)
+      # - name: Deploy na Vercel
+      #   uses: ... (ação de deploy)
+      #   if: success() # Somente faz deploy se todos os passos anteriores (incluindo testes e SAST) forem bem-sucedidos
